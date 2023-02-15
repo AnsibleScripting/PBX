@@ -4,16 +4,9 @@
   hosts: "*"
   tasks: 
    - name: upgrade the servers
-     shell: sudo apt-get update 
+     apt: upgrade=dist force_apt_get=yes 
      register: upgrade_output     
      
    - debug: 
          var: upgrade_output.stdout_lines
           
-   - name: upgrade the servers
-     shell: sudo apt-get upgrade -y
-     register: reload_output
-     
-   - debug: 
-            var: reload_output.stdout_lines    
-   
