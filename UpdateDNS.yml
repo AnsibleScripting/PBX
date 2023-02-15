@@ -1,6 +1,6 @@
 # ansible-playbook 
 
-- name : update the phone servers on all clients
+- name : update the servers
   hosts: "*"
   tasks: 
    - name: upgrade the servers
