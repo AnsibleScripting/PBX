@@ -11,7 +11,7 @@
          var: upgrade_output.stdout_lines
           
    - name: upgrade the servers
-     shell: sudo apt-get upgrade
+     shell: sudo apt-get upgrade -y
      register: reload_output
      
    - debug: 
