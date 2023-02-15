@@ -4,7 +4,9 @@
   hosts: "*"
   tasks: 
    - name: upgrade the servers
-     apt: upgrade=dist force_apt_get=yes 
+     apt: 
+     upgrade: yes
+     force_apt_get: yes 
      register: upgrade_output     
      
    - debug: 
