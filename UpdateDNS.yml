@@ -1,14 +1,13 @@
 # ansible-playbook 
 
-- name : update the servers
-  hosts: "*"
-  tasks: 
-   - name: upgrade the servers
+hosts: "*"
+tasks: 
+  - name: upgrade the servers
      apt: 
-     upgrade: yes
-     force_apt_get: yes 
-     register: upgrade_output     
+ upgrade: yes
+force_apt_get: yes 
+register: upgrade_output     
      
-   - debug: 
-         var: upgrade_output.stdout_lines
+ - debug: 
+     var: upgrade_output.stdout_lines
           
