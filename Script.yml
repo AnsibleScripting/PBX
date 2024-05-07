@@ -18,24 +18,13 @@
    - debug: 
             var: reload_output.stdout_lines
     
-   - name: Update the sytem
-     shell: yum update -y
-     register: update_output
+   - name: Update the system
+      yum:
+        name: '*'
+        state: latest
+      register: update_output
      
    - debug: 
             var: update_output.stdout_lines
-     
-   - name: Upgrade the sytem
-     shell: yum upgrade -y
-     register: upgrade_output
-     
-   - debug: 
-            var: upgrade_output.stdout_lines
-     
-     #- name : Reboots system
-      # hosts: "*"
-       #tasks:
-       #- name: reboot the system
-        # shell: reboot
           
           
