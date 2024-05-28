@@ -1,0 +1,23 @@
+---
+- name: Ensure /etc/resolv.conf has the desired DNS configuration
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Backup existing /etc/resolv.conf
+      copy:
+        src: /etc/resolv.conf
+        dest: /etc/resolv.conf.bak
+        backup: yes
+      when: not ansible_check_mode
+
+    - name: Configure /etc/resolv.conf
+      blockinfile:
+        path: /etc/resolv.conf
+        create: yes
+        block: |
+          nameserver 97.105.10.61
+          nameserver 34.27.149.229
+          nameserver 104.154.199.153
+          search kamin.us
+          
