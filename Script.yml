@@ -1,30 +1,82 @@
-# ansible-playbook PBX.yml
+---
+- name: FreePBX maintenance using raw SSH only
+  hosts: freepbx_servers
+  gather_facts: false
+  become: yes
 
-- name : update the phone servers on all clients
-  hosts: "*"
-  tasks: 
-   - name: upgrade the phone servers
-     shell: fwconsole ma upgradeall 
-     register: upgrade_output     
-     
-   - debug: 
-         var: upgrade_output.stdout_lines
-          
-          
-   - name: reload the fw console
-     shell: fwconsole reload
-     register: reload_output
-     
-   - debug: 
-            var: reload_output.stdout_lines
-    
-   - name: Update the system
-      yum:
-        name: '*'
-        state: latest
-      register: update_output
-     
-   - debug: 
-            var: update_output.stdout_lines
-          
+  vars:
+    force_reboot: false
+
+  tasks:
+    - name: Refresh FreePBX module signatures
+      raw: fwconsole ma refreshsignatures
+
+    - name: Upgrade all FreePBX modules
+      raw: fwconsole ma upgradeall
+
+    - name: Fix FreePBX permissions
+      raw: fwconsole chown
+
+    - name: Reload FreePBX
+      raw: fwconsole reload
+
+    - name: Update OS packages
+      raw: |
+        if command -v dnf >/dev/null 2>&1; then
+          dnf -y update
+        elif command -v yum >/dev/null 2>&1; then
+          yum -y update
+        elif command -v apt-get >/dev/null 2>&1; then
+          apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
+        else
+          echo "No supported package manager found"
+          exit 1
+        fi
+
+    - name: Check if reboot is required
+      raw: |
+        if [ "{{ force_reboot }}" = "True" ] || [ "{{ force_reboot }}" = "true" ]; then
+          exit 1
+        fi
+
+        if command -v needs-restarting >/dev/null 2>&1; then
+          needs-restarting -r >/dev/null 2>&1
+          exit $?
+        fi
+
+        if [ -f /var/run/reboot-required ]; then
+          exit 1
+        fi
+
+        exit 0
+      register: reboot_check
+      failed_when: false
+      changed_when: false
+
+    - name: Reboot if required
+      raw: "shutdown -r +1 'Rebooting FreePBX after maintenance'"
+      when: reboot_check.rc == 1
+
+    - name: Wait for server to go down
+      wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: 22
+        state: stopped
+        timeout: 180
+      delegate_to: localhost
+      when: reboot_check.rc == 1
+
+    - name: Wait for SSH to return
+      wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: 22
+        state: started
+        delay: 30
+        timeout: 600
+      delegate_to: localhost
+      when: reboot_check.rc == 1
+
+    - name: Final FreePBX reload after reboot
+      raw: fwconsole reload
+      when: reboot_check.rc == 1
           
